@@ -10,8 +10,8 @@ object SecondApp extends App {
   val logger = LoggerFactory.getLogger(getClass.getSimpleName)
   private val conf = new Configuration()
   //  изменяем policy, иначе был exception при работе с  date=2020-12-03
-  conf.set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER");
-  conf.set("dfs.client.block.write.replace-datanode-on-failure.enable", "true");
+  conf.set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER")
+  conf.set("dfs.client.block.write.replace-datanode-on-failure.enable", "true")
   private val hdfsCoreSitePath = new Path("core-site.xml")
   private val hdfsHDFSSitePath = new Path("hdfs-site.xml")
 
@@ -38,8 +38,8 @@ object SecondApp extends App {
     val ods_status = fs.listStatus(new Path(hdfspath))
     ods_status.foreach(y => {
       logger.info(y.getPath.toString)
-      if (y.isDirectory()) {
-        val st = fs.listStatus(y.getPath())
+      if (y.isDirectory) {
+        val st = fs.listStatus(y.getPath)
         st.foreach(x =>logger.info(x.getPath.toString))
       }
     })
@@ -51,24 +51,24 @@ object SecondApp extends App {
     var first = true
     var firstFilePath = ""
     status.foreach(x => {
-      if (x.isDirectory()) {
-        val path = x.getPath()
-        val newOdsPath = odsPath + "/" + path.getName()
+      if (x.isDirectory) {
+        val path = x.getPath
+        val newOdsPath = odsPath + "/" + path.getName
         createFolder(newOdsPath)
 
-        dirWalking(x.getPath(), newOdsPath)
+        dirWalking(x.getPath, newOdsPath)
       }
-      if (x.isFile()) {
+      if (x.isFile) {
         breakable {
           if (first) {
-            if (x.getPath().getName() == ".DS_Store") break
-            firstFilePath = odsPath + '/' + x.getPath().getName()
-            copyFile(x.getPath(), new Path(firstFilePath))
+            if (x.getPath.getName == ".DS_Store") break
+            firstFilePath = odsPath + '/' + x.getPath.getName
+            copyFile(x.getPath, new Path(firstFilePath))
             first = false
 
           }
           else {
-            appendFile(x.getPath(), new Path(firstFilePath))
+            appendFile(x.getPath, new Path(firstFilePath))
           }
         }
       }

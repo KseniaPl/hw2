@@ -1,14 +1,17 @@
 import org.apache.hadoop.conf._
 import org.apache.hadoop.fs._
 import org.apache.commons.io.IOUtils
+import org.slf4j.LoggerFactory
+
 import scala.util.control.Breaks.{break, breakable}
 
-object SecondApp extends App{
 
+object SecondApp extends App {
+  val logger = LoggerFactory.getLogger(getClass.getSimpleName)
   private val conf = new Configuration()
-//  изменяем policy, иначе был exception при работе с  date=2020-12-03
-  conf.set("dfs.client.block.write.replace-datanode-on-failure.policy","NEVER");
-  conf.set("dfs.client.block.write.replace-datanode-on-failure.enable","true");
+  //  изменяем policy, иначе был exception при работе с  date=2020-12-03
+  conf.set("dfs.client.block.write.replace-datanode-on-failure.policy", "NEVER");
+  conf.set("dfs.client.block.write.replace-datanode-on-failure.enable", "true");
   private val hdfsCoreSitePath = new Path("core-site.xml")
   private val hdfsHDFSSitePath = new Path("hdfs-site.xml")
 
@@ -28,27 +31,29 @@ object SecondApp extends App{
   fs.delete(new Path(stagePath), true)
   checkResult("hdfs://namenode:9000/")
 
-  private  def checkResult(hdfspath:String): Unit ={
-    println("---")
-    println()
-    println("check result in " + hdfspath)
+  private def checkResult(hdfspath: String): Unit = {
+   logger.info("---")
+   logger.info("\n")
+   logger.info("check result in " + hdfspath)
     val ods_status = fs.listStatus(new Path(hdfspath))
-    ods_status.foreach(y=> println(y.getPath))
-    ods_status.foreach(y=> {if(y.isDirectory()){
-      val st = fs.listStatus(y.getPath())
-      st.foreach(x=>println(x.getPath))
-    }})
+    ods_status.foreach(y => {
+      logger.info(y.getPath.toString)
+      if (y.isDirectory()) {
+        val st = fs.listStatus(y.getPath())
+        st.foreach(x =>logger.info(x.getPath.toString))
+      }
+    })
   }
 
 
-  private def dirWalking(path:Path, odsPath:String): Unit ={
+  private def dirWalking(path: Path, odsPath: String): Unit = {
     val status = fs.listStatus(path)
     var first = true
     var firstFilePath = ""
-    status.foreach(x=>{
-      if(x.isDirectory()){
+    status.foreach(x => {
+      if (x.isDirectory()) {
         val path = x.getPath()
-        val newOdsPath = odsPath+"/" + path.getName()
+        val newOdsPath = odsPath + "/" + path.getName()
         createFolder(newOdsPath)
 
         dirWalking(x.getPath(), newOdsPath)
@@ -68,6 +73,7 @@ object SecondApp extends App{
         }
       }
     })
+
     def createFolder(folderPath: String): Unit = {
       val path = new Path(folderPath)
       if (!fs.exists(path)) {
@@ -76,34 +82,38 @@ object SecondApp extends App{
     }
 
   }
-  def copyFile(srcPath:Path, dstPath:Path): Unit = {
-    val outFileStream = fs.create (dstPath )
-    val inStream = fs.open (srcPath)
-    println("copy")
-    println(srcPath)
-    println()
-    IOUtils.copy (inStream, outFileStream)
-    inStream.close ()
-    outFileStream.close ()
+
+  def copyFile(srcPath: Path, dstPath: Path): Unit = {
+    val outFileStream = fs.create(dstPath)
+    val inStream = fs.open(srcPath)
+   logger.info("copy")
+   logger.info(srcPath.toString)
+   logger.info("\n")
+    IOUtils.copy(inStream, outFileStream)
+    inStream.close()
+    outFileStream.close()
   }
-  def appendFile(srcPath:Path, dstPath:Path): Unit ={
-    println("----")
-    println()
-    println("append")
-    println(srcPath)
-    println(dstPath)
-    val outFileStream = fs.append(dstPath )
-    val inStream = fs.open (srcPath)
-    IOUtils.copy (inStream, outFileStream)
+
+  def appendFile(srcPath: Path, dstPath: Path): Unit = {
+   logger.info("----")
+   logger.info("\n")
+   logger.info("append")
+   logger.info(srcPath.toString)
+   logger.info(dstPath.toString)
+    val outFileStream = fs.append(dstPath)
+    val inStream = fs.open(srcPath)
+    IOUtils.copy(inStream, outFileStream)
 
     inStream.close()
-    outFileStream.close ()
-    val inStream2 = fs.open (dstPath)
-    def readLines = Stream.cons(inStream2.readLine, Stream.continually( inStream2.readLine))
-    readLines.takeWhile(_ != null).foreach(line => println(line))
-    inStream2.close ()
-    println()
-    println("----")
+    outFileStream.close()
+    val inStream2 = fs.open(dstPath)
+
+    def readLines = Stream.cons(inStream2.readLine, Stream.continually(inStream2.readLine))
+
+    readLines.takeWhile(_ != null).foreach(line =>logger.info(line))
+    inStream2.close()
+   logger.info("\n")
+   logger.info("----")
 
   }
 

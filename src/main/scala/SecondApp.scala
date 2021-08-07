@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import scala.util.control.Breaks.{break, breakable}
 
 
+
 object SecondApp extends App {
   val logger = LoggerFactory.getLogger(getClass.getSimpleName)
   private val conf = new Configuration()
@@ -32,15 +33,15 @@ object SecondApp extends App {
   checkResult("hdfs://namenode:9000/")
 
   private def checkResult(hdfspath: String): Unit = {
-   logger.info("---")
-   logger.info("\n")
-   logger.info("check result in " + hdfspath)
+    logger.info("---")
+    logger.info("\n")
+    logger.info("check result in " + hdfspath)
     val ods_status = fs.listStatus(new Path(hdfspath))
     ods_status.foreach(y => {
       logger.info(y.getPath.toString)
       if (y.isDirectory) {
         val st = fs.listStatus(y.getPath)
-        st.foreach(x =>logger.info(x.getPath.toString))
+        st.foreach(x => logger.info(x.getPath.toString))
       }
     })
   }
@@ -85,36 +86,50 @@ object SecondApp extends App {
 
   def copyFile(srcPath: Path, dstPath: Path): Unit = {
     val outFileStream = fs.create(dstPath)
-    val inStream = fs.open(srcPath)
-   logger.info("copy")
-   logger.info(srcPath.toString)
-   logger.info("\n")
-    IOUtils.copy(inStream, outFileStream)
-    inStream.close()
-    outFileStream.close()
+    try {
+      val inStream = fs.open(srcPath)
+      try {
+        logger.info("copy")
+        logger.info(srcPath.toString)
+        logger.info("\n")
+        IOUtils.copy(inStream, outFileStream)
+      }
+      finally {
+        inStream.close()
+      }
+    }
+    finally {
+      outFileStream.close()
+    }
   }
 
   def appendFile(srcPath: Path, dstPath: Path): Unit = {
-   logger.info("----")
-   logger.info("\n")
-   logger.info("append")
-   logger.info(srcPath.toString)
-   logger.info(dstPath.toString)
+    logger.info("----")
+    logger.info("\n")
+    logger.info("append")
+    logger.info(srcPath.toString)
+    logger.info(dstPath.toString)
     val outFileStream = fs.append(dstPath)
-    val inStream = fs.open(srcPath)
-    IOUtils.copy(inStream, outFileStream)
-
-    inStream.close()
-    outFileStream.close()
+    try {
+      val inStream = fs.open(srcPath)
+      try {
+        IOUtils.copy(inStream, outFileStream)
+      }
+      finally {
+        inStream.close()
+      }
+    }
+    finally {
+      outFileStream.close()
+    }
     val inStream2 = fs.open(dstPath)
-
-    def readLines = Stream.cons(inStream2.readLine, Stream.continually(inStream2.readLine))
-
-    readLines.takeWhile(_ != null).foreach(line =>logger.info(line))
-    inStream2.close()
-   logger.info("\n")
-   logger.info("----")
-
+    try {
+      def readLines = Stream.cons(inStream2.readLine, Stream.continually(inStream2.readLine))
+      readLines.takeWhile(_ != null).foreach(line => logger.info(line))
+    }
+    finally {
+      inStream2.close()
+    }
+    logger.info("----")
   }
-
 }
